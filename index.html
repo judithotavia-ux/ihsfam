@@ -263,13 +263,23 @@ tr:hover td{background:var(--bg)}
           <div class="form-group full"><label class="form-label">Componentes da cesta básica (editável)</label><textarea class="form-input" id="fo-itens" rows="6" placeholder="Digite aqui os itens da cesta básica. Pode mudar conforme o termo/fomento."></textarea></div>
           <div class="form-group"><label class="form-label">Data do termo / prestação de contas</label><input class="form-input" id="fo-data" type="date"></div>
           <div class="form-group"><label class="form-label">Responsável / Operador</label><input class="form-input" id="fo-responsavel" placeholder="Apenas controle interno; não sai no termo"></div>
+          <div class="form-group full">
+            <label class="form-label">Foto da entrega com a cesta básica (opcional)</label>
+            <input class="form-input" id="fo-foto-cesta" type="file" accept="image/*">
+            <small style="color:var(--muted)">Use esta foto para gerar a versão do termo com foto para prestação de contas.</small>
+            <div id="fo-foto-preview-wrap" style="display:none;margin-top:10px;align-items:center;gap:12px;flex-wrap:wrap">
+              <img id="fo-foto-preview" src="" style="width:150px;height:110px;object-fit:cover;border:1px solid #ddd;border-radius:10px;background:#fff">
+              <button type="button" class="btn btn-outline btn-sm" onclick="limparFotoTermoFomento()">Remover foto</button>
+            </div>
+          </div>
           <div class="form-group full"><label class="form-label">Observação do fomento</label><textarea class="form-input" id="fo-obs" rows="2" placeholder="Ex.: entrega de cesta, lote, observação da prestação de contas..."></textarea></div>
           <div class="form-group full"><label class="form-label">Texto editável do termo</label><textarea class="form-input" id="fo-template" rows="7" placeholder="Texto do termo. Pode mudar a cada emenda parlamentar."></textarea></div>
           <div class="form-group full"><button type="button" class="btn btn-outline btn-sm" onclick="salvarModeloTermoFomento()">Salvar modelo deste termo</button></div>
         </div>
         <div style="display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap">
           <button class="btn btn-primary" onclick="salvarFomentoSimples()">Salvar Fomento</button>
-          <button class="btn btn-outline" onclick="imprimirTermoFomento()">🖨️ Imprimir Termo do Fomento</button>
+          <button class="btn btn-outline" onclick="imprimirTermoFomento(false)">🖨️ Imprimir Termo sem Foto</button>
+          <button class="btn btn-outline" onclick="imprimirTermoFomento(true)">📷 Imprimir Termo com Foto</button>
         </div>
       </div>
     </div>
@@ -637,6 +647,7 @@ tr:hover td{background:var(--bg)}
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 // ===== CONEXÃO COM O BANCO (Supabase) =====
 const SUPABASE_URL='https://gsszjbdlaurcurlxvgdl.supabase.co';
@@ -930,61 +941,101 @@ function saveBen(){
   DB.set('beneficiarios',list);closeModal('ben-modal');renderBens('');
 }
 async function importBeneficiariosExcel(input){
-  const file = input.files[0];
-  if(!file) return;
+  try{
+    const file = input.files && input.files[0];
+    if(!file) return;
 
-  const data = await file.arrayBuffer();
-  const workbook = XLSX.read(data);
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(sheet,{defval:''});
+    if(typeof XLSX === 'undefined'){
+      alert('Não foi possível carregar o leitor de Excel. Verifique a internet e tente novamente.');
+      input.value = '';
+      return;
+    }
 
-  let lista = DB.get('beneficiarios') || [];
-  let importados = 0;
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type:'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet,{defval:''});
 
-  rows.forEach(r=>{
-    const nome = r.Nome || r.nome || '';
-    const cpf = r.CPF || r.cpf || '';
-    const telefone = r.Telefone || r.telefone || '';
-    const endereco = r.Endereço || r.endereco || '';
+    if(!rows.length){
+      alert('A planilha está vazia ou não foi possível ler os dados.');
+      input.value = '';
+      return;
+    }
 
-    if(!nome) return;
-const cpfLimpo = String(cpf).replace(/\D/g,'');
+    const normalizar = (v) => String(v || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]/g,'');
 
-const enderecoLimpo = String(endereco)
-  .toLowerCase()
-  .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-  .replace(/\s+/g,' ')
-  .trim();
+    const pegar = (linha, nomes) => {
+      const chaves = Object.keys(linha);
+      for(const nomeEsperado of nomes){
+        const achou = chaves.find(k => normalizar(k) === normalizar(nomeEsperado));
+        if(achou !== undefined) return linha[achou];
+      }
+      return '';
+    };
 
-const duplicado = lista.some(b => {
-  const cpfB = String(b.cpf || '').replace(/\D/g,'');
-  const endB = String(b.endereco || b.rua || '')
-    .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/\s+/g,' ')
-    .trim();
+    let lista = DB.get('beneficiarios') || [];
+    let importados = 0;
+    let repetidos = 0;
+    let semNome = 0;
 
-  return (cpfLimpo && cpfB === cpfLimpo) || (enderecoLimpo && endB === enderecoLimpo);
-});
+    rows.forEach(r=>{
+      const nome = String(pegar(r, ['Nome','Nome completo','Beneficiário','Beneficiario','Pessoa','Nome do beneficiário','Nome do beneficiario'])).trim();
+      const cpf = String(pegar(r, ['CPF','Cpf','Documento','CPF beneficiário','CPF beneficiario'])).trim();
+      const telefone = String(pegar(r, ['Telefone','Tel','Celular','Contato','Fone','Whatsapp','WhatsApp'])).trim();
+      const endereco = String(pegar(r, ['Endereço','Endereco','Rua','Logradouro','Endereço completo','Endereco completo','Residência','Residencia'])).trim();
+      const bairro = String(pegar(r, ['Bairro'])).trim();
+      const numero = String(pegar(r, ['Número','Numero','Nº','N°','Casa'])).trim();
 
-if(duplicado) return;
-    lista.push({
-      id: 'ben_' + Date.now() + '_' + Math.random().toString(36).slice(2),
-      nome:nome,
-      cpf:cpf,
-      tel:telefone,
-      endereco:endereco,
-      status:'Ativo'
+      if(!nome){ semNome++; return; }
+
+      const cpfLimpo = String(cpf).replace(/\D/g,'');
+      const enderecoFinal = endereco || [pegar(r,['Rua','Logradouro']), numero, bairro].filter(Boolean).join(', ');
+      const enderecoLimpo = String(enderecoFinal)
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/\s+/g,' ')
+        .trim();
+
+      const duplicado = lista.some(b => {
+        const cpfB = String(b.cpf || '').replace(/\D/g,'');
+        const endB = String(b.endereco || b.rua || '')
+          .toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+          .replace(/\s+/g,' ')
+          .trim();
+        return (cpfLimpo && cpfB === cpfLimpo) || (enderecoLimpo && endB === enderecoLimpo);
+      });
+
+      if(duplicado){ repetidos++; return; }
+
+      lista.push({
+        id: 'ben_' + Date.now() + '_' + Math.random().toString(36).slice(2),
+        nome,
+        cpf,
+        tel: telefone,
+        endereco: enderecoFinal,
+        bairro,
+        status:'Ativo',
+        dependentes: []
+      });
+
+      importados++;
     });
 
-    importados++;
-  });
+    DB.set('beneficiarios', lista);
+    CACHE['beneficiarios'] = lista;
+    renderBens('');
+    input.value = '';
 
-  DB.set('beneficiarios', lista);
-CACHE['beneficiarios'] = lista;
-renderBens('');
-console.log(lista);
-alert(importados + ' beneficiários importados!');
+    alert(importados + ' beneficiários importados!\n' + repetidos + ' repetidos ignorados.\n' + semNome + ' linhas sem nome ignoradas.');
+  }catch(e){
+    console.error('Erro ao importar Excel:', e);
+    alert('Erro ao importar planilha. Confira se o arquivo é .xlsx, .xls ou .csv e se tem coluna de Nome.');
+    input.value = '';
+  }
 }
 
 function deleteBen(id, cpf){
@@ -1682,11 +1733,46 @@ function atualizarNumeroTermoFomentoTela(){
   const campo=document.getElementById('fo-numero');
   if(campo && !campo.value) campo.placeholder='Próximo: '+(maiorNumeroTermoFomentoLocal(chaveFomentoSequencia(document.getElementById('fo-fomento')?.value||'007/2026-FEAS'))+1);
 }
+let termoFomentoFotoDataUrl = '';
+
+function initUploadFotoTermoFomento(){
+  const input = document.getElementById('fo-foto-cesta');
+  if(!input || input.dataset.init === '1') return;
+  input.dataset.init = '1';
+  input.addEventListener('change', function(e){
+    const arquivo = e.target.files && e.target.files[0];
+    if(!arquivo){ limparFotoTermoFomento(); return; }
+    const leitor = new FileReader();
+    leitor.onload = function(ev){
+      termoFomentoFotoDataUrl = ev.target.result;
+      const img = document.getElementById('fo-foto-preview');
+      const wrap = document.getElementById('fo-foto-preview-wrap');
+      if(img) img.src = termoFomentoFotoDataUrl;
+      if(wrap) wrap.style.display = 'flex';
+    };
+    leitor.readAsDataURL(arquivo);
+  });
+}
+
+function limparFotoTermoFomento(){
+  termoFomentoFotoDataUrl = '';
+  const input = document.getElementById('fo-foto-cesta');
+  const img = document.getElementById('fo-foto-preview');
+  const wrap = document.getElementById('fo-foto-preview-wrap');
+  if(input) input.value = '';
+  if(img) img.src = '';
+  if(wrap) wrap.style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(initUploadFotoTermoFomento, 300);
+});
+
 function imprimirHtmlTermo(titulo, corpoHtml){
   const logo=document.querySelector('.sidebar-logo img')?.src||'';
   let html='';
   html += '<html><head><title>'+titulo+'</title>';
-  html += '<style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;color:#111;margin:0}.termo-fomento{border:1px solid #333;padding:10px 10px 0 10px;min-height:930px;position:relative}.tf-head{display:grid;grid-template-columns:90px 1fr;align-items:center;margin-bottom:6px}.tf-logo{text-align:center;font-size:10px;font-weight:bold}.tf-logo img{width:58px;height:58px;border-radius:50%;object-fit:cover}.tf-org{font-weight:bold;font-size:20px;line-height:1.15;text-transform:uppercase;text-align:left}.tf-topline{display:grid;grid-template-columns:245px 1fr;gap:18px;align-items:start}.tf-num{height:105px;border:2px solid #222;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;margin-top:8px}.tf-meta{font-size:17px;font-weight:bold;line-height:1.8;text-transform:uppercase;padding-top:16px}.tf-fomento{text-decoration:underline}.tf-body{font-size:14px;line-height:1.55;text-align:justify;margin-top:12px}.tf-line{display:inline-block;border-bottom:1px solid #111;min-width:280px;padding:0 6px;font-family:cursive;font-size:18px}.tf-cpf{display:inline-block;border-bottom:1px solid #111;min-width:160px;padding:0 6px}.tf-date{margin-top:24px;font-size:14px;font-weight:bold;text-align:center}.tf-ass{margin-top:38px;text-align:center;font-size:13px;font-weight:bold}.tf-ass-line{border-top:1px solid #111;width:420px;margin:0 auto 3px}.tf-footer{font-size:12px;margin-top:18px;border-top:2px solid #111;padding-top:8px;display:grid;grid-template-columns:80px 1fr;align-items:center}.tf-footer img{width:50px;height:50px;border-radius:50%;object-fit:cover}.top{text-align:center;margin-bottom:12px}.top img{width:70px;height:70px;border-radius:50%;object-fit:cover}.org{font-weight:bold;font-size:16px;line-height:1.15;text-transform:uppercase}.num{text-align:center;font-size:18px;font-weight:bold;margin:6px 0}.titulo{text-align:center;font-size:16px;font-weight:bold;text-transform:uppercase;margin:8px 0}.meta{text-align:center;font-size:13px;font-weight:bold;line-height:1.5}.term{font-size:13px;line-height:1.55;text-align:justify;margin-top:12px}.date{text-align:left;margin-top:18px;font-size:13px}.ass{margin-top:55px;text-align:center;font-size:13px}.line{border-top:1px solid #111;width:380px;margin:0 auto 4px}.rodape{font-size:11px;text-align:center;margin-top:22px;border-top:1px solid #999;padding-top:8px}.box{border:1px solid #333;padding:12px;margin:10px 0;font-size:14px}.row{margin:7px 0}@media print{body{padding:0}.btn{display:none}}</style>';
+  html += '<style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;color:#111;margin:0}.termo-fomento{border:1px solid #333;padding:10px 10px 0 10px;min-height:930px;position:relative}.tf-head{display:grid;grid-template-columns:90px 1fr;align-items:center;margin-bottom:6px}.tf-logo{text-align:center;font-size:10px;font-weight:bold}.tf-logo img{width:58px;height:58px;border-radius:50%;object-fit:cover}.tf-org{font-weight:bold;font-size:20px;line-height:1.15;text-transform:uppercase;text-align:left}.tf-topline{display:grid;grid-template-columns:245px 1fr;gap:18px;align-items:start}.tf-num{height:105px;border:2px solid #222;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;margin-top:8px}.tf-meta{font-size:17px;font-weight:bold;line-height:1.8;text-transform:uppercase;padding-top:16px}.tf-fomento{text-decoration:underline}.tf-body{font-size:14px;line-height:1.55;text-align:justify;margin-top:12px}.tf-line{display:inline-block;border-bottom:1px solid #111;min-width:280px;padding:0 6px;font-family:cursive;font-size:18px}.tf-cpf{display:inline-block;border-bottom:1px solid #111;min-width:160px;padding:0 6px}.tf-date{margin-top:24px;font-size:14px;font-weight:bold;text-align:center}.tf-ass{margin-top:34px;text-align:center;font-size:13px;font-weight:bold}.tf-ass-line{border-top:1px solid #111;width:420px;margin:0 auto 3px}.tf-photo{margin:14px auto 6px;border:1px solid #333;padding:6px;width:520px;text-align:center;page-break-inside:avoid}.tf-photo-title{font-size:12px;font-weight:bold;margin-bottom:5px;text-transform:uppercase}.tf-photo img{max-width:500px;max-height:170px;object-fit:contain}.tf-footer{font-size:12px;margin-top:12px;border-top:2px solid #111;padding-top:8px;display:grid;grid-template-columns:80px 1fr;align-items:center}.tf-footer img{width:50px;height:50px;border-radius:50%;object-fit:cover}.top{text-align:center;margin-bottom:12px}.top img{width:70px;height:70px;border-radius:50%;object-fit:cover}.org{font-weight:bold;font-size:16px;line-height:1.15;text-transform:uppercase}.num{text-align:center;font-size:18px;font-weight:bold;margin:6px 0}.titulo{text-align:center;font-size:16px;font-weight:bold;text-transform:uppercase;margin:8px 0}.meta{text-align:center;font-size:13px;font-weight:bold;line-height:1.5}.term{font-size:13px;line-height:1.55;text-align:justify;margin-top:12px}.date{text-align:left;margin-top:18px;font-size:13px}.ass{margin-top:55px;text-align:center;font-size:13px}.line{border-top:1px solid #111;width:380px;margin:0 auto 4px}.rodape{font-size:11px;text-align:center;margin-top:22px;border-top:1px solid #999;padding-top:8px}.box{border:1px solid #333;padding:12px;margin:10px 0;font-size:14px}.row{margin:7px 0}@media print{body{padding:0}.btn{display:none}}</style>';
   html += '</head><body>';
   html += corpoHtml;
   html += '</body></html>';
@@ -1694,7 +1780,7 @@ function imprimirHtmlTermo(titulo, corpoHtml){
   win.document.open(); win.document.write(html); win.document.close(); win.focus(); setTimeout(()=>win.print(),500);
 }
 
-async function imprimirTermoFomento(){
+async function imprimirTermoFomento(comFoto=false){
   const b=dadosBeneficiarioAtual(); if(!b) return;
   carregarModeloTermoFomento();
   const numero=await obterOuGerarNumeroTermoFomento();
@@ -1714,13 +1800,18 @@ async function imprimirTermoFomento(){
   corpo += '<div class="tf-body">Eu, <span class="tf-line">'+(b.nome||'')+'</span>,<br>Portador(a) do CPF: <span class="tf-cpf">'+(b.cpf||'')+'</span> '+texto+'</div>';
   corpo += '<div class="tf-date">MANAUS, _____ DE ____________________ DE 2026.</div>';
   corpo += '<div class="tf-ass"><div class="tf-ass-line"></div><span style="font-family:cursive;font-size:18px;font-weight:normal">'+(b.nome||'')+'</span><br>ASSINATURA DO BENEFICIÁRIO.</div>';
+  if(comFoto){
+    if(!termoFomentoFotoDataUrl){ alert('Selecione a foto da entrega com a cesta básica antes de imprimir o termo com foto.'); return; }
+    corpo += '<div class="tf-photo"><div class="tf-photo-title">Foto da entrega da cesta básica</div><img src="'+termoFomentoFotoDataUrl+'"></div>';
+  }
   corpo += '<div class="tf-footer"><div>'+(logo?'<img src="'+logo+'">':'IHSFAM')+'</div><div><b>INSTITUTO HUMANITÁRIO SEM FRONTEIRAS DA AMAZÔNIA</b><br>Rua Doutor Dalmir Câmara nº 345 - São Jorge Manaus-AM CEP: 69033-070<br>Contato: 92 99275 4822 - e-mail: institutohumanitariosfdaamazoni@ihsfda.org</div></div>';
   corpo += '</div>';
-  imprimirHtmlTermo('Termo de Fomento Nº '+numero,corpo);
+  imprimirHtmlTermo('Termo de Fomento Nº '+numero+(comFoto?' com Foto':''),corpo);
 
   // Depois de abrir/imprimir, limpa o campo para o próximo beneficiário receber outro número.
   const campoNumero=document.getElementById('fo-numero');
   if(campoNumero) campoNumero.value='';
+  if(comFoto) limparFotoTermoFomento();
   atualizarNumeroTermoFomentoTela();
 }
 
