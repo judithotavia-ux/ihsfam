@@ -218,9 +218,9 @@ tr:hover td{background:var(--bg)}
 <div class="page" id="page-atendimento">
   <div class="grid-2" style="margin-bottom:1rem">
     <div class="card">
-      <div class="card-header"><span class="card-title">👩‍⚕️ Serviço Social</span></div>
+      <div class="card-header"><span class="card-title">🔎 Atendimento / Fichas e Termos</span></div>
       <div class="card-body">
-        <p style="color:var(--muted);margin-bottom:.75rem">Busque o beneficiário por nome, CPF ou telefone. Se não estiver cadastrado, cadastre na hora e já emita o termo.</p>
+        <p style="color:var(--muted);margin-bottom:.75rem">Busque o beneficiário por nome, CPF ou telefone. Depois escolha: Termo de Fomento, Ficha/Termo Comum ou Ficha da Assistente Social.</p>
         <div class="search-bar">
           <input class="search-input" id="at-busca" placeholder="Digite nome, CPF ou telefone..." oninput="buscarBeneficiarioAtendimento(this.value)">
           <button class="btn btn-primary" onclick="novoBeneficiarioAtendimento()">+ Cadastrar na Hora</button>
@@ -256,10 +256,11 @@ tr:hover td{background:var(--bg)}
       <div class="card-body">
         <p style="color:var(--muted);margin-bottom:.75rem">Use quando a pessoa veio apenas receber cesta, kit ou outro benefício. Não gera encaminhamento social.</p>
         <div class="form-grid">
-          <div class="form-group"><label class="form-label">Nº do termo</label><input class="form-input" id="fo-numero" placeholder="Ex.: 179"></div>
+          <div class="form-group"><label class="form-label">Nº do termo</label><input class="form-input" id="fo-numero" placeholder="Gerado automaticamente" readonly><small style="color:var(--muted)">O sistema gera o próximo número ao salvar/imprimir.</small></div>
           <div class="form-group"><label class="form-label">Projeto</label><input class="form-input" id="fo-projeto" value="ACOLHER PARA ALIMENTAR"></div>
           <div class="form-group"><label class="form-label">Termo de Fomento</label><input class="form-input" id="fo-fomento" value="007/2026-FEAS"></div>
           <div class="form-group"><label class="form-label">Benefício / Ação</label><input class="form-input" id="fo-beneficio" value="Cesta básica com 25 itens"></div>
+          <div class="form-group full"><label class="form-label">Componentes da cesta básica (editável)</label><textarea class="form-input" id="fo-itens" rows="6" placeholder="Digite aqui os itens da cesta básica. Pode mudar conforme o termo/fomento."></textarea></div>
           <div class="form-group"><label class="form-label">Data do termo / prestação de contas</label><input class="form-input" id="fo-data" type="date"></div>
           <div class="form-group"><label class="form-label">Responsável / Operador</label><input class="form-input" id="fo-responsavel" placeholder="Apenas controle interno; não sai no termo"></div>
           <div class="form-group full"><label class="form-label">Observação do fomento</label><textarea class="form-input" id="fo-obs" rows="2" placeholder="Ex.: entrega de cesta, lote, observação da prestação de contas..."></textarea></div>
@@ -269,6 +270,31 @@ tr:hover td{background:var(--bg)}
         <div style="display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap">
           <button class="btn btn-primary" onclick="salvarFomentoSimples()">Salvar Fomento</button>
           <button class="btn btn-outline" onclick="imprimirTermoFomento()">🖨️ Imprimir Termo do Fomento</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">📋 Ficha / Termo Comum</span></div>
+      <div class="card-body">
+        <p style="color:var(--muted);margin-bottom:.75rem">Use quando o beneficiário for atendido por operador/secretaria, sem passar pela assistente social. Serve para cadastro, entrega, orientação simples, ação e impressão de termo comum.</p>
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Tipo de atendimento</label><select class="form-input" id="ag-tipo"><option>Entrega de benefício</option><option>Cadastro / atualização</option><option>Orientação simples</option><option>Retirada de termo</option><option>Participação em ação</option><option>Outro</option></select></div>
+          <div class="form-group"><label class="form-label">Projeto / Ação</label><input class="form-input" id="ag-projeto" value="ACOLHER PARA ALIMENTAR"></div>
+          <div class="form-group"><label class="form-label">Termo / Fomento</label><input class="form-input" id="ag-fomento" value="007/2026-FEAS"></div>
+          <div class="form-group"><label class="form-label">Benefício</label><input class="form-input" id="ag-beneficio" value="Cesta básica com 25 itens"></div>
+          <div class="form-group"><label class="form-label">Data do atendimento/termo</label><input class="form-input" id="ag-data" type="date"></div>
+          <div class="form-group"><label class="form-label">Hora</label><input class="form-input" id="ag-hora" type="time"></div>
+          <div class="form-group"><label class="form-label">Operador</label><input class="form-input" id="ag-operador" placeholder="Nome do operador"></div>
+          <div class="form-group"><label class="form-label">Nº do termo</label><input class="form-input" id="ag-numero" placeholder="Ex.: 179"></div>
+          <div class="form-group full"><label class="form-label">Observação</label><textarea class="form-input" id="ag-obs" rows="2" placeholder="Observações do atendimento, entrega, ação ou prestação de contas."></textarea></div>
+          <div class="form-group full"><label class="form-label">Texto editável do termo comum</label><textarea class="form-input" id="ag-template" rows="5" placeholder="Texto do termo comum. Pode mudar conforme a ação."></textarea></div>
+          <div class="form-group full"><button type="button" class="btn btn-outline btn-sm" onclick="salvarModeloTermoAtendimentoGeral()">Salvar modelo deste termo comum</button></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="salvarAtendimentoGeral()">Salvar Atendimento</button>
+          <button class="btn btn-outline" onclick="imprimirTermoAtendimentoGeral()">🖨️ Imprimir Termo Comum</button>
+          <button class="btn btn-outline" onclick="limparAtendimentoGeral()">Limpar</button>
         </div>
       </div>
     </div>
@@ -1328,6 +1354,13 @@ function renderAtendimento(){
   if(dataS && !dataS.value) dataS.value=new Date().toISOString().slice(0,10);
   const horaS=document.getElementById('so-hora');
   if(horaS && !horaS.value) horaS.value=new Date().toTimeString().slice(0,5);
+  const dataG=document.getElementById('ag-data');
+  if(dataG && !dataG.value) dataG.value=new Date().toISOString().slice(0,10);
+  const horaG=document.getElementById('ag-hora');
+  if(horaG && !horaG.value) horaG.value=new Date().toTimeString().slice(0,5);
+  carregarModeloTermoAtendimentoGeral();
+  carregarModeloTermoFomento();
+  atualizarNumeroTermoFomentoTela();
   const busca=document.getElementById('at-busca');
   if(busca) buscarBeneficiarioAtendimento(busca.value||'');
   if(atendimentoBenId) mostrarBeneficiarioAtendimento(atendimentoBenId);
@@ -1397,11 +1430,16 @@ function salvarRegistroAtendimento(obj){
   return true;
 }
 
-function salvarFomentoSimples(){
+async function salvarFomentoSimples(){
+  const numero=await obterOuGerarNumeroTermoFomento();
+  if(!numero) return;
   const ok=salvarRegistroAtendimento({
     tipo:'Fomento',
+    numero:numero,
     fomento:document.getElementById('fo-fomento')?.value||'',
+    projeto:document.getElementById('fo-projeto')?.value||'ACOLHER PARA ALIMENTAR',
     beneficio:document.getElementById('fo-beneficio')?.value||'',
+    itens:document.getElementById('fo-itens')?.value||'',
     encaminhamento:'',
     necessidade:'',
     data:document.getElementById('fo-data')?.value||new Date().toISOString().slice(0,10),
@@ -1409,7 +1447,67 @@ function salvarFomentoSimples(){
     responsavel:document.getElementById('fo-responsavel')?.value||'',
     obs:document.getElementById('fo-obs')?.value||''
   });
-  if(ok) alert('Fomento salvo com sucesso.');
+  if(ok) alert('Fomento salvo com sucesso. Nº do termo: '+numero);
+}
+
+function modeloPadraoTermoAtendimentoGeral(){
+  return 'DECLARO que fui atendido(a) pelo INSTITUTO HUMANITÁRIO SEM FRONTEIRAS DA AMAZÔNIA - IHSFAM, no projeto {{PROJETO}}, referente ao termo/fomento {{FOMENTO}}, para fins de {{BENEFICIO}}. Declaro ainda que as informações prestadas são verdadeiras e autorizo o uso dos dados necessários para registro interno, prestação de contas e comprovação da ação realizada.';
+}
+function carregarModeloTermoAtendimentoGeral(){
+  const el=document.getElementById('ag-template');
+  if(el && !el.value) el.value=localStorage.getItem('ihsfam_modelo_termo_atendimento_geral') || modeloPadraoTermoAtendimentoGeral();
+}
+function salvarModeloTermoAtendimentoGeral(){
+  const el=document.getElementById('ag-template');
+  if(!el) return;
+  localStorage.setItem('ihsfam_modelo_termo_atendimento_geral', el.value || modeloPadraoTermoAtendimentoGeral());
+  alert('Modelo do termo comum salvo.');
+}
+function salvarAtendimentoGeral(){
+  const ok=salvarRegistroAtendimento({
+    tipo:'Atendimento Geral',
+    modalidade:document.getElementById('ag-tipo')?.value||'Atendimento',
+    fomento:document.getElementById('ag-fomento')?.value||'',
+    beneficio:document.getElementById('ag-beneficio')?.value||'',
+    encaminhamento:'',
+    necessidade:'',
+    data:document.getElementById('ag-data')?.value||new Date().toISOString().slice(0,10),
+    hora:document.getElementById('ag-hora')?.value||new Date().toTimeString().slice(0,5),
+    responsavel:document.getElementById('ag-operador')?.value||'',
+    obs:document.getElementById('ag-obs')?.value||''
+  });
+  if(ok) alert('Atendimento comum salvo com sucesso.');
+}
+function limparAtendimentoGeral(){
+  ['ag-obs','ag-numero'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+}
+function imprimirTermoAtendimentoGeral(){
+  const b=dadosBeneficiarioAtual(); if(!b) return;
+  carregarModeloTermoAtendimentoGeral();
+  const numero=document.getElementById('ag-numero')?.value||'';
+  const tipo=document.getElementById('ag-tipo')?.value||'Atendimento';
+  const projeto=document.getElementById('ag-projeto')?.value||'';
+  const fomento=document.getElementById('ag-fomento')?.value||'';
+  const beneficio=document.getElementById('ag-beneficio')?.value||'';
+  const data=document.getElementById('ag-data')?.value||'';
+  const hora=document.getElementById('ag-hora')?.value||'';
+  const obs=document.getElementById('ag-obs')?.value||'';
+  const modelo=document.getElementById('ag-template')?.value || modeloPadraoTermoAtendimentoGeral();
+  const dataFmt=fmtDate(data)||'____/____/2026';
+  const texto=aplicarVariaveisTermo(modelo,{nome:b.nome||'',cpf:b.cpf||'',projeto,fomento,beneficio,data:dataFmt});
+  const endereco=b.endereco || [b.rua,b.num,b.comp,b.bairro,b.cidade,b.estado].filter(Boolean).join(', ');
+  let corpo='';
+  corpo += '<div class="top">'+(document.querySelector('.sidebar-logo img')?.src?'<img src="'+document.querySelector('.sidebar-logo img').src+'">':'')+'<div class="org">INSTITUTO HUMANITÁRIO<br>SEM FRONTEIRAS DA AMAZÔNIA<br>IHSFAM</div></div>';
+  if(numero) corpo += '<div class="num">'+numero+'</div>';
+  corpo += '<div class="titulo">FICHA / TERMO DE ATENDIMENTO</div>';
+  corpo += '<div class="meta">TIPO: '+tipo+'<br>PROJETO/AÇÃO: '+projeto+'<br>TERMO/FOMENTO: '+fomento+'</div>';
+  corpo += '<div class="box"><div class="row"><b>Beneficiário:</b> '+(b.nome||'')+'</div><div class="row"><b>CPF:</b> '+(b.cpf||'')+'</div><div class="row"><b>Telefone:</b> '+(b.tel||b.telefone||'')+'</div><div class="row"><b>Endereço:</b> '+endereco+'</div></div>';
+  corpo += '<div class="term">'+texto+'</div>';
+  if(obs) corpo += '<div class="box"><b>Observação:</b> '+obs+'</div>';
+  corpo += '<div class="date">MANAUS, '+dataFmt+(hora?' - '+hora:'')+'.</div>';
+  corpo += '<div class="ass"><div class="line"></div>'+(b.nome||'')+'<br>ASSINATURA DO BENEFICIÁRIO</div>';
+  corpo += '<div class="rodape"><b>INSTITUTO HUMANITÁRIO SEM FRONTEIRAS DA AMAZÔNIA</b><br>Rua Doutor Dalmir Câmara nº 345 - São Jorge Manaus-AM CEP: 69033-070<br>Contato: 92 99275-4822 - e-mail: institutohumanitariosfdaamazoni@ihsfda.org<br>IHSFAM</div>';
+  imprimirHtmlTermo('Termo de Atendimento Comum',corpo);
 }
 
 function salvarAtendimentoSocial(){
@@ -1498,28 +1596,97 @@ function dadosBeneficiarioAtual(){
 }
 
 
+function itensPadraoCestaBasica(){
+  return '1) ARROZ, EMBALAGEM 1KG. - 5 KG, 2) AÇÚCAR, EMBALAGEM 1KG. - 5 KG, 3) CAFÉ, EMBALAGEM 500G. - 3 PCT, 4) LEITE EM PÓ INTEGRAL, EMBALAGEM 400G - 3 PCT, 5) MACARRÃO, EMBALAGEM DE 500G - 3 PCT, 6) FEIJÃO CARIOCA, TIPO 1, 1KG - 3 KG, 7) FARINHA DE MANDIOCA BRANCA, EMBALAGEM 1KG - 2 KG, 8) FARINHA DE MANDIOCA DO UARINI, EMBALAGEM 1KG - 2 KG, 9) FARINHA DE TRIGO SEM FERMENTO, EMBALAGEM 1KG - 2 KG, 10) FLOCOS DE MILHO PRÉ COZIDO, EMBALAGEM DE 500G - 2 KG, 11) ÓLEO VEGETAL TIPO 1, EMBALAGEM 900ML - 2 LT, 12) GOIABADA, EMBALAGEM 125G - 1 POTE, 13) MARGARINA, EMBALAGEM DE 500G - 2 POTE, 14) BISCOITO CREAM CRACKER, EMBALAGEM DE 350G - 2 PCT, 15) SAL TIPO 1 EMBALAGEM DE 1KG - 2 KILOS, 16) SARDINHA COM ÓLEO, 250G - 2 LATA, 17) SALSICHA, EMBALAGEM 300G - 1 LATA, 18) SARDINHA COM ÓLEO 125G - 2 LATA, 19) MACARRÃO SÊMOLA PARAFUSO 500G - 2 PCT, 20) ACHOCOLATADO EM PÓ 350G - 2 LATA, 21) SELETA DE LEGUMES 300G - 1 LATA, 22) SALSICHA BORDON 300G - 1 LATA, 23) EXTRATO DE TOMATE 140G - 1 SACHÊ, 24) INFORMATIVO DE PALESTRA EM FORMATO DE FOLDER - 1';
+}
 function modeloPadraoTermoFomento(){
-  return 'DECLARO QUE AUTORIZO O USO DE MINHA IMAGEM PARA FINS DE USO DO INSTITUTO HUMANITÁRIO SEM FRONTEIRAS DA AMAZÔNIA - IHSFAM, NESTE PROJETO {{PROJETO}}, ATO QUE RECEBI OS SEGUINTES ITENS DE {{BENEFICIO}}: 1) ARROZ, EMBALAGEM 1KG. - 5 KG, 2) AÇÚCAR, EMBALAGEM 1KG. - 5 KG, 3) CAFÉ, EMBALAGEM 500G. - 3 PCT, 4) LEITE EM PÓ INTEGRAL, EMBALAGEM 400G - 3 PCT, 5) MACARRÃO, EMBALAGEM DE 500G - 3 PCT, 6) FEIJÃO CARIOCA, TIPO 1, 1KG - 3 KG, 7) FARINHA DE MANDIOCA BRANCA, EMBALAGEM 1KG - 2 KG, 8) FARINHA DE MANDIOCA DO UARINI, EMBALAGEM 1KG - 2 KG, 9) FARINHA DE TRIGO SEM FERMENTO, EMBALAGEM 1KG - 2 KG, 10) FLOCOS DE MILHO PRÉ COZIDO, EMBALAGEM DE 500G - 2 KG, 11) ÓLEO VEGETAL TIPO 1, EMBALAGEM 900ML - 2 LT, 12) GOIABADA, EMBALAGEM 125G - 1 POTE, 13) MARGARINA, EMBALAGEM DE 500G - 2 POTE, 14) BISCOITO CREAM CRACKER, EMBALAGEM DE 350G - 2 PCT, 15) SAL TIPO 1 EMBALAGEM DE 1KG - 2 KG, 16) SARDINHA COM ÓLEO, 250G - 2 LATA, 17) SALSICHA, EMBALAGEM 300G - 1 LATA, 18) SARDINHA COM ÓLEO 125G - 2 LATA, 19) MACARRÃO SÊMOLA PARAFUSO 500G - 2 PCT, 20) ACHOCOLATADO EM PÓ 350G - 2 LATA, 21) SELETA DE LEGUMES 300G - 1 LATA, 22) SALSICHA BORDON 300G - 1 LATA, 23) EXTRATO DE TOMATE 140G - 1 SACHÊ, 24) INFORMATIVO DE PALESTRA EM FORMATO DE FOLDER - 1, PROVENIENTE DE DOAÇÃO PELO INSTITUTO HUMANITÁRIO SEM FRONTEIRAS DA AMAZÔNIA, CONFORME O TERMO DE FOMENTO Nº {{FOMENTO}}. DECLARO AINDA QUE AS INFORMAÇÕES ACIMA SÃO VERDADEIRAS E ASSUMO AS RESPONSABILIDADES SOB PENA DA LEI.';
+  return 'DECLARO QUE AUTORIZO O USO DE MINHA IMAGEM PARA FINS DE USO DO INSTITUTO HUMANITÁRIO SEM FRONTEIRAS DA AMAZÔNIA - IHSFAM, NESTE PROJETO {{PROJETO}}, ATO QUE RECEBI OS SEGUINTES ITENS DE CESTA BÁSICA: {{ITENS}}, PROVENIENTE DE DOAÇÃO PELO INSTITUTO HUMANITÁRIO SEM FRONTEIRAS DA AMAZÔNIA, CONFORME O TERMO DE FOMENTO Nº {{FOMENTO}}. DECLARO AINDA QUE AS INFORMAÇÕES ACIMA SÃO VERDADEIRAS E ASSUMO AS RESPONSABILIDADES SOB PENA DA LEI.';
 }
 function carregarModeloTermoFomento(){
   const el=document.getElementById('fo-template');
   if(el && !el.value) el.value=localStorage.getItem('ihsfam_modelo_termo_fomento') || modeloPadraoTermoFomento();
+  const itens=document.getElementById('fo-itens');
+  if(itens && !itens.value) itens.value=localStorage.getItem('ihsfam_itens_cesta_fomento') || itensPadraoCestaBasica();
 }
 function salvarModeloTermoFomento(){
   const el=document.getElementById('fo-template');
-  if(!el) return;
-  localStorage.setItem('ihsfam_modelo_termo_fomento', el.value || modeloPadraoTermoFomento());
-  alert('Modelo do termo salvo.');
+  const itens=document.getElementById('fo-itens');
+  if(el) localStorage.setItem('ihsfam_modelo_termo_fomento', el.value || modeloPadraoTermoFomento());
+  if(itens) localStorage.setItem('ihsfam_itens_cesta_fomento', itens.value || itensPadraoCestaBasica());
+  alert('Modelo do termo e componentes da cesta salvos.');
 }
 function aplicarVariaveisTermo(txt, vars){
-  return String(txt||'').replace(/{{NOME}}/g, vars.nome||'').replace(/{{CPF}}/g, vars.cpf||'').replace(/{{PROJETO}}/g, vars.projeto||'').replace(/{{FOMENTO}}/g, vars.fomento||'').replace(/{{BENEFICIO}}/g, vars.beneficio||'').replace(/{{DATA}}/g, vars.data||'');
+  return String(txt||'')
+    .replace(/{{NOME}}/g, vars.nome||'')
+    .replace(/{{CPF}}/g, vars.cpf||'')
+    .replace(/{{PROJETO}}/g, vars.projeto||'')
+    .replace(/{{FOMENTO}}/g, vars.fomento||'')
+    .replace(/{{BENEFICIO}}/g, vars.beneficio||'')
+    .replace(/{{ITENS}}/g, vars.itens||'')
+    .replace(/{{NUMERO}}/g, vars.numero||'')
+    .replace(/{{DATA}}/g, vars.data||'');
 }
+function chaveFomentoSequencia(fomento){
+  return String(fomento||'SEM_FOMENTO').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'') || 'SEM_FOMENTO';
+}
+function maiorNumeroTermoFomentoLocal(chave){
+  let maior=0;
+  const atendimentos=DB.get('atendimentos')||[];
+  atendimentos.forEach(a=>{
+    if(String(a.tipo||'').toLowerCase().includes('fomento') && chaveFomentoSequencia(a.fomento)===chave){
+      const n=parseInt(a.numero||a.termoNumero||0,10); if(n>maior) maior=n;
+    }
+  });
+  const salvo=parseInt(localStorage.getItem('ihsfam_seq_fomento_'+chave)||'0',10);
+  if(salvo>maior) maior=salvo;
+  return maior;
+}
+async function reservarNumeroTermoFomento(fomento){
+  const chave=chaveFomentoSequencia(fomento);
+  let n=maiorNumeroTermoFomentoLocal(chave)+1;
+  // Se houver nuvem, reserva o número por INSERT único em app_data. Assim, mesmo com vários usuários,
+  // se dois tentarem o mesmo número, um deles recebe conflito e tenta o próximo.
+  if(CLOUD_OK && supa){
+    for(let tent=0; tent<5000; tent++, n++){
+      const id='termo_fomento_'+chave+'_'+String(n).padStart(6,'0');
+      const row={collection:'sequencias',id:id,data:{tipo:'termo_fomento',fomento:fomento,numero:n,createdAt:new Date().toISOString()}};
+      const {error}=await supa.from('app_data').insert(row);
+      if(!error){
+        localStorage.setItem('ihsfam_seq_fomento_'+chave,String(n));
+        return n;
+      }
+      // 23505 = número já reservado; tenta o próximo.
+      const msg=String(error.code||'')+' '+String(error.message||'');
+      if(!msg.includes('23505') && !msg.toLowerCase().includes('duplicate')){
+        console.warn('Não foi possível reservar na nuvem, usando sequência local:', error);
+        break;
+      }
+    }
+  }
+  // Fallback offline: não garante múltiplos computadores ao mesmo tempo, mas mantém ordem no dispositivo.
+  localStorage.setItem('ihsfam_seq_fomento_'+chave,String(n));
+  return n;
+}
+async function obterOuGerarNumeroTermoFomento(){
+  const campo=document.getElementById('fo-numero');
+  const fomento=document.getElementById('fo-fomento')?.value||'007/2026-FEAS';
 
+  // IMPORTANTE: sempre reserva um novo número no momento de salvar/imprimir.
+  // Assim, se trocar o beneficiário, o sistema não reaproveita o número que ficou na tela.
+  const numero=await reservarNumeroTermoFomento(fomento);
+
+  if(campo) campo.value=numero;
+  return numero;
+}
+function atualizarNumeroTermoFomentoTela(){
+  const campo=document.getElementById('fo-numero');
+  if(campo && !campo.value) campo.placeholder='Próximo: '+(maiorNumeroTermoFomentoLocal(chaveFomentoSequencia(document.getElementById('fo-fomento')?.value||'007/2026-FEAS'))+1);
+}
 function imprimirHtmlTermo(titulo, corpoHtml){
   const logo=document.querySelector('.sidebar-logo img')?.src||'';
   let html='';
   html += '<html><head><title>'+titulo+'</title>';
-  html += '<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}.top{text-align:center;margin-bottom:12px}.top img{width:70px;height:70px;border-radius:50%;object-fit:cover}.org{font-weight:bold;font-size:16px;line-height:1.15;text-transform:uppercase}.num{text-align:center;font-size:18px;font-weight:bold;margin:6px 0}.titulo{text-align:center;font-size:16px;font-weight:bold;text-transform:uppercase;margin:8px 0}.meta{text-align:center;font-size:13px;font-weight:bold;line-height:1.5}.term{font-size:13px;line-height:1.55;text-align:justify;margin-top:12px}.date{text-align:left;margin-top:18px;font-size:13px}.ass{margin-top:55px;text-align:center;font-size:13px}.line{border-top:1px solid #111;width:380px;margin:0 auto 4px}.rodape{font-size:11px;text-align:center;margin-top:22px;border-top:1px solid #999;padding-top:8px}.box{border:1px solid #333;padding:12px;margin:10px 0;font-size:14px}.row{margin:7px 0}@media print{body{padding:18px}.btn{display:none}}</style>';
+  html += '<style>@page{size:A4;margin:12mm}body{font-family:Arial,sans-serif;color:#111;margin:0}.termo-fomento{border:1px solid #333;padding:10px 10px 0 10px;min-height:930px;position:relative}.tf-head{display:grid;grid-template-columns:90px 1fr;align-items:center;margin-bottom:6px}.tf-logo{text-align:center;font-size:10px;font-weight:bold}.tf-logo img{width:58px;height:58px;border-radius:50%;object-fit:cover}.tf-org{font-weight:bold;font-size:20px;line-height:1.15;text-transform:uppercase;text-align:left}.tf-topline{display:grid;grid-template-columns:245px 1fr;gap:18px;align-items:start}.tf-num{height:105px;border:2px solid #222;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;margin-top:8px}.tf-meta{font-size:17px;font-weight:bold;line-height:1.8;text-transform:uppercase;padding-top:16px}.tf-fomento{text-decoration:underline}.tf-body{font-size:14px;line-height:1.55;text-align:justify;margin-top:12px}.tf-line{display:inline-block;border-bottom:1px solid #111;min-width:280px;padding:0 6px;font-family:cursive;font-size:18px}.tf-cpf{display:inline-block;border-bottom:1px solid #111;min-width:160px;padding:0 6px}.tf-date{margin-top:24px;font-size:14px;font-weight:bold;text-align:center}.tf-ass{margin-top:38px;text-align:center;font-size:13px;font-weight:bold}.tf-ass-line{border-top:1px solid #111;width:420px;margin:0 auto 3px}.tf-footer{font-size:12px;margin-top:18px;border-top:2px solid #111;padding-top:8px;display:grid;grid-template-columns:80px 1fr;align-items:center}.tf-footer img{width:50px;height:50px;border-radius:50%;object-fit:cover}.top{text-align:center;margin-bottom:12px}.top img{width:70px;height:70px;border-radius:50%;object-fit:cover}.org{font-weight:bold;font-size:16px;line-height:1.15;text-transform:uppercase}.num{text-align:center;font-size:18px;font-weight:bold;margin:6px 0}.titulo{text-align:center;font-size:16px;font-weight:bold;text-transform:uppercase;margin:8px 0}.meta{text-align:center;font-size:13px;font-weight:bold;line-height:1.5}.term{font-size:13px;line-height:1.55;text-align:justify;margin-top:12px}.date{text-align:left;margin-top:18px;font-size:13px}.ass{margin-top:55px;text-align:center;font-size:13px}.line{border-top:1px solid #111;width:380px;margin:0 auto 4px}.rodape{font-size:11px;text-align:center;margin-top:22px;border-top:1px solid #999;padding-top:8px}.box{border:1px solid #333;padding:12px;margin:10px 0;font-size:14px}.row{margin:7px 0}@media print{body{padding:0}.btn{display:none}}</style>';
   html += '</head><body>';
   html += corpoHtml;
   html += '</body></html>';
@@ -1527,27 +1694,34 @@ function imprimirHtmlTermo(titulo, corpoHtml){
   win.document.open(); win.document.write(html); win.document.close(); win.focus(); setTimeout(()=>win.print(),500);
 }
 
-function imprimirTermoFomento(){
+async function imprimirTermoFomento(){
   const b=dadosBeneficiarioAtual(); if(!b) return;
   carregarModeloTermoFomento();
-  const numero=document.getElementById('fo-numero')?.value||'';
+  const numero=await obterOuGerarNumeroTermoFomento();
   const projeto=document.getElementById('fo-projeto')?.value||'ACOLHER PARA ALIMENTAR';
   const fomento=document.getElementById('fo-fomento')?.value||'';
   const beneficio=document.getElementById('fo-beneficio')?.value||'';
   const data=document.getElementById('fo-data')?.value||'';
+  const itens=document.getElementById('fo-itens')?.value||itensPadraoCestaBasica();
   const modelo=document.getElementById('fo-template')?.value || modeloPadraoTermoFomento();
   const dataFmt=fmtDate(data)||'____/____/2026';
-  const texto=aplicarVariaveisTermo(modelo,{nome:b.nome||'',cpf:b.cpf||'',projeto,fomento,beneficio,data:dataFmt});
+  const texto=aplicarVariaveisTermo(modelo,{numero,nome:b.nome||'',cpf:b.cpf||'',projeto,fomento,beneficio,itens,data:dataFmt});
+  const logo=document.querySelector('.sidebar-logo img')?.src||'';
   let corpo='';
-  corpo += '<div class="top">'+(document.querySelector('.sidebar-logo img')?.src?'<img src="'+document.querySelector('.sidebar-logo img').src+'">':'')+'<div class="org">INSTITUTO HUMANITÁRIO<br>SEM FRONTEIRAS DA AMAZÔNIA<br>IHSFAM</div></div>';
-  if(numero) corpo += '<div class="num">'+numero+'</div>';
-  corpo += '<div class="titulo">TERMO DE ENTREGA DAS CESTAS BÁSICAS</div>';
-  corpo += '<div class="meta">PROJETO: '+projeto+'<br>TERMO DE FOMENTO: '+fomento+'</div>';
-  corpo += '<div class="term"><b>'+(b.nome||'')+'</b><br>Portador(a) do CPF: <b>'+(b.cpf||'')+'</b> '+texto+'</div>';
-  corpo += '<div class="date">MANAUS, _____ DE ____________________ DE 2026.</div>';
-  corpo += '<div class="ass"><div class="line"></div>'+(b.nome||'')+'<br>ASSINATURA DO BENEFICIÁRIO</div>';
-  corpo += '<div class="rodape"><b>INSTITUTO HUMANITÁRIO SEM FRONTEIRAS DA AMAZÔNIA</b><br>Rua Doutor Dalmir Câmara nº 345 - São Jorge Manaus-AM CEP: 69033-070<br>Contato: 92 99275-4822 - e-mail: institutohumanitariosfdaamazoni@ihsfda.org<br>IHSFAM</div>';
-  imprimirHtmlTermo('Termo de Fomento',corpo);
+  corpo += '<div class="termo-fomento">';
+  corpo += '<div class="tf-head"><div class="tf-logo">'+(logo?'<img src="'+logo+'"><br>':'')+'IHSFAM</div><div class="tf-org">INSTITUTO HUMANITÁRIO<br>SEM FRONTEIRAS DA AMAZÔNIA</div></div>';
+  corpo += '<div class="tf-topline"><div class="tf-num">'+numero+'</div><div class="tf-meta">TERMO DE ENTREGA DAS CESTAS BÁSICAS<br>PROJETO: '+projeto+'<br>TERMO DE FOMENTO: <span class="tf-fomento">'+fomento+'</span></div></div>';
+  corpo += '<div class="tf-body">Eu, <span class="tf-line">'+(b.nome||'')+'</span>,<br>Portador(a) do CPF: <span class="tf-cpf">'+(b.cpf||'')+'</span> '+texto+'</div>';
+  corpo += '<div class="tf-date">MANAUS, _____ DE ____________________ DE 2026.</div>';
+  corpo += '<div class="tf-ass"><div class="tf-ass-line"></div><span style="font-family:cursive;font-size:18px;font-weight:normal">'+(b.nome||'')+'</span><br>ASSINATURA DO BENEFICIÁRIO.</div>';
+  corpo += '<div class="tf-footer"><div>'+(logo?'<img src="'+logo+'">':'IHSFAM')+'</div><div><b>INSTITUTO HUMANITÁRIO SEM FRONTEIRAS DA AMAZÔNIA</b><br>Rua Doutor Dalmir Câmara nº 345 - São Jorge Manaus-AM CEP: 69033-070<br>Contato: 92 99275 4822 - e-mail: institutohumanitariosfdaamazoni@ihsfda.org</div></div>';
+  corpo += '</div>';
+  imprimirHtmlTermo('Termo de Fomento Nº '+numero,corpo);
+
+  // Depois de abrir/imprimir, limpa o campo para o próximo beneficiário receber outro número.
+  const campoNumero=document.getElementById('fo-numero');
+  if(campoNumero) campoNumero.value='';
+  atualizarNumeroTermoFomentoTela();
 }
 
 function imprimirTermoSocial(){
